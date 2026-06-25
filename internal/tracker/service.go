@@ -31,12 +31,19 @@ func (s *Service) Track(ctx context.Context, input string, chatID int64) (int64,
 	})
 }
 
-func (s *Service) Untrack(ctx context.Context, id int64) error {
+func (s *Service) Untrack(ctx context.Context, id int64, chatID int64) error {
+	ts, err := s.repo.GetTrackedSearch(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ts == nil || ts.ChatID != chatID {
+		return fmt.Errorf("tracked search #%d not found", id)
+	}
 	return s.repo.DeleteTrackedSearch(ctx, id)
 }
 
-func (s *Service) ListTracked(ctx context.Context) ([]domain.TrackedSearch, error) {
-	return s.repo.GetTrackedSearches(ctx)
+func (s *Service) ListTracked(ctx context.Context, chatID int64) ([]domain.TrackedSearch, error) {
+	return s.repo.GetTrackedSearchesByChatID(ctx, chatID)
 }
 
 func (s *Service) GetTrackedSearch(ctx context.Context, id int64) (*domain.TrackedSearch, error) {

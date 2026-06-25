@@ -13,7 +13,7 @@ import (
 )
 
 func (h *Handler) showTrackList(ctx context.Context, chatID int64) {
-	searches, err := h.svc.ListTracked(ctx)
+	searches, err := h.svc.ListTracked(ctx, chatID)
 	if err != nil {
 		h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
 		return
@@ -76,7 +76,7 @@ func (h *Handler) handleTrackListPick(ctx context.Context, chatID int64, text st
 
 func (h *Handler) showTrackActions(ctx context.Context, chatID int64, searchID int64) {
 	ts, err := h.svc.GetTrackedSearch(ctx, searchID)
-	if err != nil || ts == nil {
+	if err != nil || ts == nil || ts.ChatID != chatID {
 		h.sendMsg(chatID, "❌ Track not found.", mainMenu())
 		h.state.clear(chatID)
 		return
@@ -118,7 +118,7 @@ func (h *Handler) handleTrackActionPick(ctx context.Context, chatID int64, text 
 		h.showAlertList(ctx, chatID, st.SearchID)
 
 	case "❌ Untrack":
-		if err := h.svc.Untrack(ctx, st.SearchID); err != nil {
+		if err := h.svc.Untrack(ctx, st.SearchID, chatID); err != nil {
 			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
 		} else {
 			h.sendMsg(chatID, "✅ Untracked.", mainMenu())

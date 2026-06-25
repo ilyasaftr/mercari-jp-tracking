@@ -217,6 +217,25 @@ func (s *SQLite) GetTrackedSearches(ctx context.Context) ([]domain.TrackedSearch
 	return searches, rows.Err()
 }
 
+func (s *SQLite) GetTrackedSearchesByChatID(ctx context.Context, chatID int64) ([]domain.TrackedSearch, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, keyword, chat_id, created_at FROM tracked_searches WHERE chat_id = ?`, chatID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var searches []domain.TrackedSearch
+	for rows.Next() {
+		var ts domain.TrackedSearch
+		if err := rows.Scan(&ts.ID, &ts.Keyword, &ts.ChatID, &ts.CreatedAt); err != nil {
+			return nil, err
+		}
+		searches = append(searches, ts)
+	}
+	return searches, rows.Err()
+}
+
 func (s *SQLite) DeleteTrackedSearch(ctx context.Context, id int64) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM tracked_searches WHERE id = ?`, id)
 	return err

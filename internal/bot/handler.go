@@ -13,9 +13,9 @@ import (
 
 type TrackerService interface {
 	Track(ctx context.Context, input string, chatID int64) (int64, error)
-	Untrack(ctx context.Context, id int64) error
+	Untrack(ctx context.Context, id int64, chatID int64) error
 	SeedSearch(ctx context.Context, ts domain.TrackedSearch) (int, error)
-	ListTracked(ctx context.Context) ([]domain.TrackedSearch, error)
+	ListTracked(ctx context.Context, chatID int64) ([]domain.TrackedSearch, error)
 	GetTrackedSearch(ctx context.Context, id int64) (*domain.TrackedSearch, error)
 	CheckAll(ctx context.Context) error
 	SearchNow(ctx context.Context, input string) ([]domain.Item, error)

@@ -15,6 +15,7 @@ type Repository interface {
 	GetPriceHistory(ctx context.Context, itemID string) ([]PriceRecord, error)
 	SaveTrackedSearch(ctx context.Context, ts TrackedSearch) (int64, error)
 	GetTrackedSearches(ctx context.Context) ([]TrackedSearch, error)
+	GetTrackedSearchesByChatID(ctx context.Context, chatID int64) ([]TrackedSearch, error)
 	GetTrackedSearch(ctx context.Context, id int64) (*TrackedSearch, error)
 	DeleteTrackedSearch(ctx context.Context, id int64) error
 	LinkItemToSearch(ctx context.Context, itemID string, searchID int64) error
