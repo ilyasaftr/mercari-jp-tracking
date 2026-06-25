@@ -53,15 +53,17 @@ func (h *Handler) showTrackList(ctx context.Context, chatID int64) {
 
 func (h *Handler) handleTrackListPick(ctx context.Context, chatID int64, text string) {
 	if text == "🔄 Check Now" {
+		h.state.clear(chatID)
 		if err := h.svc.CheckAll(ctx); err != nil {
 			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
 		} else {
-			h.sendMsg(chatID, "✅ Price check completed", mainMenu())
+			h.sendMsg(chatID, "✅ Check completed", mainMenu())
 		}
 		return
 	}
 
 	if !strings.HasPrefix(text, "#") {
+		h.goMain(chatID)
 		return
 	}
 

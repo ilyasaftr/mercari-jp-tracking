@@ -95,7 +95,7 @@ func (h *Handler) handleCommand(ctx context.Context, msg *tgbotapi.Message) {
 		if err := h.svc.CheckAll(ctx); err != nil {
 			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
 		} else {
-			h.sendMsg(chatID, "✅ Price check completed", mainMenu())
+			h.sendMsg(chatID, "✅ Check completed", mainMenu())
 		}
 	default:
 		h.sendMsg(chatID, "Unknown command. Tap a button or use /start.", mainMenu())
@@ -209,7 +209,7 @@ func (h *Handler) handleMainView(ctx context.Context, chatID int64, text string)
 		if err := h.svc.CheckAll(ctx); err != nil {
 			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
 		} else {
-			h.sendMsg(chatID, "✅ Price check completed", mainMenu())
+			h.sendMsg(chatID, "✅ Check completed", mainMenu())
 		}
 	case "🔍 Search":
 		h.state.set(chatID, &chatState{View: viewWaitTrackKeyword})
