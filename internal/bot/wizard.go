@@ -208,22 +208,23 @@ func (h *Handler) confirmTrack(ctx context.Context, chatID int64) {
 		return
 	}
 
-	itemCount, seedErr := h.svc.SeedSearch(ctx, domain.TrackedSearch{
-		ID:      searchID,
-		Keyword: finalInput,
-		ChatID:  chatID,
-	})
-	if seedErr != nil {
-		log.Printf("seed search failed: %v", seedErr)
-	}
-
 	h.state.clear(chatID)
-	text := fmt.Sprintf("✅ *Now tracking!*\n📝 `%s`\n📦 Found %d existing items\n\nYou'll be notified when NEW items appear or prices change.", textutil.EscapeMarkdown(setup.Params.DisplayName()), itemCount)
+	displayName := textutil.EscapeMarkdown(setup.Params.DisplayName())
 
 	if searchID > 0 {
 		h.showTrackActions(ctx, chatID, searchID)
-		h.sendMsg(chatID, text, nil)
+		h.sendMsg(chatID, fmt.Sprintf("✅ *Now tracking!*\n📝 `%s`\n⏳ Scanning existing items...", displayName), nil)
 	} else {
-		h.sendMsg(chatID, text, mainMenu())
+		h.sendMsg(chatID, fmt.Sprintf("✅ *Now tracking!*\n📝 `%s`", displayName), mainMenu())
 	}
+
+	go func() {
+		ts := domain.TrackedSearch{ID: searchID, Keyword: finalInput, ChatID: chatID}
+		itemCount, err := h.svc.SeedSearch(ctx, ts)
+		if err != nil {
+			log.Printf("seed search failed: %v", err)
+			return
+		}
+		h.sendMsg(chatID, fmt.Sprintf("📦 Found *%d* existing items for `%s`\n\nYou'll be notified when NEW items appear or prices change.", itemCount, displayName), nil)
+	}()
 }

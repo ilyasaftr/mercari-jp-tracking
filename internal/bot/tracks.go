@@ -54,11 +54,14 @@ func (h *Handler) showTrackList(ctx context.Context, chatID int64) {
 func (h *Handler) handleTrackListPick(ctx context.Context, chatID int64, text string) {
 	if text == "🔄 Check Now" {
 		h.state.clear(chatID)
-		if err := h.svc.CheckAll(ctx); err != nil {
-			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
-		} else {
-			h.sendMsg(chatID, "✅ Check completed", mainMenu())
-		}
+		h.sendMsg(chatID, "⏳ Checking...", mainMenu())
+		go func() {
+			if err := h.svc.CheckAll(ctx); err != nil {
+				h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
+			} else {
+				h.sendMsg(chatID, "✅ Check completed", mainMenu())
+			}
+		}()
 		return
 	}
 
@@ -181,16 +184,19 @@ func (h *Handler) handleMatchTypePick(ctx context.Context, chatID int64, text st
 
 	if len(added) == 0 {
 		h.sendMsg(chatID, "❌ No keywords added (may already exist).", mainMenu())
-	} else {
-		label := matchFieldLabel[matchField]
-		preview := "`" + textutil.EscapeMarkdown(strings.Join(added, "`, `")) + "`"
-		h.sendMsg(chatID, fmt.Sprintf("✅ Added %d keyword(s): %s [%s]\nScanning existing items...", len(added), preview, label), mainMenu())
+		return
+	}
 
+	label := matchFieldLabel[matchField]
+	preview := "`" + textutil.EscapeMarkdown(strings.Join(added, "`, `")) + "`"
+	h.sendMsg(chatID, fmt.Sprintf("✅ Added %d keyword(s): %s [%s]\n⏳ Scanning existing items...", len(added), preview, label), mainMenu())
+	h.showTrackActions(ctx, chatID, searchID)
+
+	go func() {
 		if err := h.svc.ScanAlertKeywords(ctx, searchID, chatID, newAlerts); err != nil {
 			log.Printf("scan alert keywords: %v", err)
 		}
-	}
-	h.showTrackActions(ctx, chatID, searchID)
+	}()
 }
 
 func (h *Handler) showAlertList(ctx context.Context, chatID int64, searchID int64) {
@@ -245,31 +251,35 @@ func (h *Handler) handleAlertListPick(ctx context.Context, chatID int64, text st
 }
 
 func (h *Handler) doSearch(ctx context.Context, chatID int64, input string) {
-	items, err := h.svc.SearchNow(ctx, input)
-	if err != nil {
-		h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
-		return
-	}
-	if len(items) == 0 {
-		h.sendMsg(chatID, "No items found.", mainMenu())
-		return
-	}
+	h.sendMsg(chatID, "⏳ Searching...", mainMenu())
 
-	params := domain.ParseInput(input)
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("🔍 *%d result(s)* for `%s`\n\n", len(items), textutil.EscapeMarkdown(params.DisplayName())))
-	for i, item := range items {
-		if i >= 10 {
-			sb.WriteString(fmt.Sprintf("\n_...and %d more_", len(items)-10))
-			break
+	go func() {
+		items, err := h.svc.SearchNow(ctx, input)
+		if err != nil {
+			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
+			return
 		}
-		sb.WriteString(fmt.Sprintf(
-			"• [%s](%s)\n  💰 ¥%d\n\n",
-			textutil.EscapeMarkdown(textutil.Truncate(item.Name, 50)),
-			item.ItemURL,
-			item.Price,
-		))
-	}
+		if len(items) == 0 {
+			h.sendMsg(chatID, "No items found.", mainMenu())
+			return
+		}
 
-	h.sendMsg(chatID, sb.String(), mainMenu())
+		params := domain.ParseInput(input)
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("🔍 *%d result(s)* for `%s`\n\n", len(items), textutil.EscapeMarkdown(params.DisplayName())))
+		for i, item := range items {
+			if i >= 10 {
+				sb.WriteString(fmt.Sprintf("\n_...and %d more_", len(items)-10))
+				break
+			}
+			sb.WriteString(fmt.Sprintf(
+				"• [%s](%s)\n  💰 ¥%d\n\n",
+				textutil.EscapeMarkdown(textutil.Truncate(item.Name, 50)),
+				item.ItemURL,
+				item.Price,
+			))
+		}
+
+		h.sendMsg(chatID, sb.String(), mainMenu())
+	}()
 }

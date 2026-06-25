@@ -92,11 +92,14 @@ func (h *Handler) handleCommand(ctx context.Context, msg *tgbotapi.Message) {
 	case "list":
 		h.showTrackList(ctx, chatID)
 	case "check":
-		if err := h.svc.CheckAll(ctx); err != nil {
-			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
-		} else {
-			h.sendMsg(chatID, "✅ Check completed", mainMenu())
-		}
+		h.sendMsg(chatID, "⏳ Checking...", mainMenu())
+		go func() {
+			if err := h.svc.CheckAll(ctx); err != nil {
+				h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
+			} else {
+				h.sendMsg(chatID, "✅ Check completed", mainMenu())
+			}
+		}()
 	default:
 		h.sendMsg(chatID, "Unknown command. Tap a button or use /start.", mainMenu())
 	}
@@ -206,11 +209,14 @@ func (h *Handler) handleMainView(ctx context.Context, chatID int64, text string)
 	case "📋 My Tracks":
 		h.showTrackList(ctx, chatID)
 	case "🔄 Check Now":
-		if err := h.svc.CheckAll(ctx); err != nil {
-			h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
-		} else {
-			h.sendMsg(chatID, "✅ Check completed", mainMenu())
-		}
+		h.sendMsg(chatID, "⏳ Checking...", mainMenu())
+		go func() {
+			if err := h.svc.CheckAll(ctx); err != nil {
+				h.sendMsg(chatID, fmt.Sprintf("❌ Error: %v", err), mainMenu())
+			} else {
+				h.sendMsg(chatID, "✅ Check completed", mainMenu())
+			}
+		}()
 	case "🔍 Search":
 		h.state.set(chatID, &chatState{View: viewWaitTrackKeyword})
 		h.sendMsg(chatID, "🔍 Send a *keyword* or *Mercari URL* to search:", tgbotapi.NewRemoveKeyboard(true))
